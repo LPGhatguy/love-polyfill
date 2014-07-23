@@ -22,6 +22,19 @@ ffi.cdef([[
 local liblove = (jit.os == "Windows" and ffi.load("love")) or ffi.C
 local sdl = (jit.os == "Windows" and ffi.load("SDL2")) or ffi.C
 
+if (not love) then
+	error("love-shim requires love to be loaded and in the global namespace")
+end
+
+if (love.shim) then
+	return print("Skipping love-shim load, shim already loaded")
+end
+
+love.shim = {
+	version = {1, 0},
+	versionCode = 1
+}
+
 if (love.graphics) then
 	love.graphics.setNewFont(12)
 end
