@@ -1,3 +1,6 @@
+--love-shim version 1.0
+--Lucien Greathouse (LPGhatguy)
+
 local ffi = require("ffi")
 
 --SDL headers we use
