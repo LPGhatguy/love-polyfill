@@ -1,4 +1,4 @@
---love-polyfill version 1.1
+--love-polyfill version 1.1.1
 --Implements 0.9.2 features into 0.9.1
 --Lucien Greathouse (LPGhatguy)
 
@@ -12,6 +12,7 @@ if (love.getVersion) then
 end
 
 local ffi = require("ffi")
+local bit = require("bit")
 
 --SDL headers we use
 ffi.cdef([[
@@ -25,6 +26,23 @@ ffi.cdef([[
 		SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT = 0x00000001,
 		SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT = 0x00000002
 	} SDL_MessageBoxButtonFlags;
+
+	typedef enum {
+		SDL_WINDOW_FULLSCREEN = 0x00000001,
+		SDL_WINDOW_OPENGL = 0x00000002,
+		SDL_WINDOW_SHOWN = 0x00000004,
+		SDL_WINDOW_HIDDEN = 0x00000008,
+		SDL_WINDOW_BORDERLESS = 0x00000010,
+		SDL_WINDOW_RESIZABLE = 0x00000020,
+		SDL_WINDOW_MINIMIZED = 0x00000040,
+		SDL_WINDOW_MAXIMIZED = 0x00000080,
+		SDL_WINDOW_INPUT_GRABBED = 0x00000100,
+		SDL_WINDOW_INPUT_FOCUS = 0x00000200,
+		SDL_WINDOW_MOUSE_FOCUS = 0x00000400,
+		SDL_WINDOW_FULLSCREEN_DESKTOP = ( SDL_WINDOW_FULLSCREEN | 0x00001000 ),
+		SDL_WINDOW_FOREIGN = 0x00000800,
+		SDL_WINDOW_ALLOW_HIGHDPI = 0x00002000
+	} SDL_WindowFlags;
 
 	typedef struct SDL_Window SDL_Window;
 
@@ -52,6 +70,10 @@ ffi.cdef([[
 		const SDL_MessageBoxColorScheme *colorScheme;
 	} SDL_MessageBoxData;
 
+	typedef struct {
+		int x, y, w, h;
+	} SDL_Rect;
+
 	SDL_Window *SDL_GL_GetCurrentWindow(void);
 	void SDL_SetWindowPosition(SDL_Window *window, int x, int y);
 	void SDL_GetWindowPosition(SDL_Window *window, int *x, int *y);
@@ -59,6 +81,10 @@ ffi.cdef([[
 	void SDL_MinimizeWindow(SDL_Window *window);
 	int SDL_ShowSimpleMessageBox(uint32_t flags, const char *title, const char *message, SDL_Window *window);
 	int SDL_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid);
+	int SDL_GetNumVideoDisplays();
+	int SDL_GetDisplayBounds(int display, SDL_Rect *rect);
+	int SDL_GetWindowDisplayIndex(SDL_Window *window);
+	int SDL_GetWindowFlags(SDL_Window *window);
 ]])
 
 --PhysFS headers we use
@@ -80,23 +106,42 @@ if (love.polyfill) then
 end
 
 love.polyfill = {
-	version = {1, 1, 0},
-	versionCode = 2
+	version = {1, 1, 1},
+	versionCode = 3
 }
 
 --Window changes
 if (love.window) then
-	love.window.setPosition = function(x, y)
-		assert(type(x) == "number" and type(y) == "number", "love.window.setPosition accepts two parameters of type 'number'")
+	love.window.setPosition = function(x, y, display)
+		local displayCount = tonumber(sdl.SDL_GetNumVideoDisplays());
+		display = math.min(math.max(display and display - 1 or 0, 0), displayCount - 1)
+
+		local p_displayBounds = ffi.new("SDL_Rect[1]")
+		sdl.SDL_GetDisplayBounds(display, p_displayBounds)
+
+		x = x + p_displayBounds[0].x
+		y = y + p_displayBounds[0].y
+
 		sdl.SDL_SetWindowPosition(sdl.SDL_GL_GetCurrentWindow(), x, y)
 	end
 
 	love.window.getPosition = function()
+		local window = sdl.SDL_GL_GetCurrentWindow()
 		local x = ffi.new("int[1]")
 		local y = ffi.new("int[1]")
-		sdl.SDL_GetWindowPosition(sdl.SDL_GL_GetCurrentWindow(), x, y)
+		sdl.SDL_GetWindowPosition(window, x, y)
 
-		return tonumber(x[0]), tonumber(y[0])
+		local display = math.max(tonumber(sdl.SDL_GetWindowDisplayIndex(window)), 0)
+
+		if (bit.band(sdl.SDL_GetWindowFlags(window), sdl.SDL_WINDOW_FULLSCREEN) == 0) then
+			local p_displayBounds = ffi.new("SDL_Rect[1]")
+			sdl.SDL_GetDisplayBounds(display, p_displayBounds)
+
+			x[0] = x[0] - p_displayBounds[0].x
+			y[0] = y[0] - p_displayBounds[0].y
+		end
+
+		return tonumber(x[0]), tonumber(y[0]), display + 1
 	end
 
 	love.window.minimize = function()
