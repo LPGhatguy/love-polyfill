@@ -1,15 +1,6 @@
---love-polyfill version 1.1.1
+--love-polyfill version 1.1.2
 --Implements 0.9.2 features into 0.9.1
 --Lucien Greathouse (LPGhatguy)
-
-if (love.getVersion) then
-	local major, minor, revision = love.getVersion()
-
-	if (major >= 0 and minor >= 9 and revision >= 2) then
-		--No need to polyfill!
-		return
-	end
-end
 
 local ffi = require("ffi")
 local bit = require("bit")
@@ -94,8 +85,8 @@ ffi.cdef([[
 	int PHYSFS_isSymbolicLink(const char *fname);
 ]])
 
-local liblove = (jit.os == "Windows" and ffi.load("love")) or ffi.C
-local sdl = (jit.os == "Windows" and ffi.load("SDL2")) or ffi.C
+local liblove = ffi.load("love")
+local sdl = ffi.load("SDL2")
 
 if (not love) then
 	error("love-polyfill requires love to be loaded and in the global namespace")
@@ -106,13 +97,14 @@ if (love.polyfill) then
 end
 
 love.polyfill = {
-	version = {1, 1, 1},
-	versionCode = 3
+	version = {1, 1, 2},
+	versionCode = 4,
+	emulating = "0.9.2"
 }
 
 --Window changes
 if (love.window) then
-	love.window.setPosition = function(x, y, display)
+	love.window.setPosition = love.window.setPosition or function(x, y, display)
 		local displayCount = tonumber(sdl.SDL_GetNumVideoDisplays());
 		display = math.min(math.max(display and display - 1 or 0, 0), displayCount - 1)
 
@@ -125,7 +117,7 @@ if (love.window) then
 		sdl.SDL_SetWindowPosition(sdl.SDL_GL_GetCurrentWindow(), x, y)
 	end
 
-	love.window.getPosition = function()
+	love.window.getPosition = love.window.getPosition or function()
 		local window = sdl.SDL_GL_GetCurrentWindow()
 		local x = ffi.new("int[1]")
 		local y = ffi.new("int[1]")
@@ -144,11 +136,11 @@ if (love.window) then
 		return tonumber(x[0]), tonumber(y[0]), display + 1
 	end
 
-	love.window.minimize = function()
+	love.window.minimize = love.window.minimize or function()
 		sdl.SDL_MinimizeWindow(sdl.SDL_GL_GetCurrentWindow());
 	end
 
-	love.window.maximize = function()
+	love.window.maximize = love.window.maximize or function()
 		sdl.SDL_MaximizeWindow(sdl.SDL_GL_GetCurrentWindow());
 	end
 
@@ -158,7 +150,7 @@ if (love.window) then
 		error = sdl.SDL_MESSAGEBOX_ERROR
 	}
 
-	love.window.showMessageBox = function(title, message, ...)
+	love.window.showMessageBox = love.window.showMessageBox or function(title, message, ...)
 		if (type((...)) == "table") then
 			-- title, message, buttonlist, type, attach
 			local buttonlist = select(1, ...)
@@ -223,16 +215,16 @@ if (love.window) then
 end
 
 if (love.filesystem) then
-	love.filesystem.setSymlinksEnabled = function(value)
+	love.filesystem.setSymlinksEnabled = love.filesystem.setSymlinksEnabled or function(value)
 		assert(type(value) == "boolean", "love.filesystem.setSymlinksEnabled accepts one parameter of type 'boolean'")
 		liblove.PHYSFS_permitSymbolicLinks(value and 1 or 0)
 	end
 
-	love.filesystem.areSymlinksEnabled = function()
+	love.filesystem.areSymlinksEnabled = love.filesystem.areSymlinksEnabled or function()
 		return liblove.PHYSFS_symbolicLinksPermitted() ~= 0
 	end
 
-	love.filesystem.isSymlink = function(path)
+	love.filesystem.isSymlink = love.filesystem.isSymlink or function(path)
 		assert(type(path) == "string", "love.filesystem.isSymlink accepts one parameter of type 'string'")
 		return liblove.PHYSFS_isSymbolicLink(path) ~= 0
 	end
