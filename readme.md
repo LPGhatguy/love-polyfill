@@ -1,8 +1,11 @@
-# LOVE Shim
-This is a project that provides a couple (potentially) useful changes to LOVE in the hopes of assisting developers that might be using the framework. To use it, just call `require("love-shim")` after LOVE has been loaded.
+# LÖVE Polyfill
+This is a project that provides select features from future versions of LÖVE for versions that are released now. This lets developers target existing versions while still developing for near-future versions of LÖVE.
 
-## Current Features
-- Provides a default font object so that love.graphics.getFont won't fizzle.
-- Makes love.window.setMode fire a "resize" event
-- Adds love.window.setPosition and love.window.getPosition to set/get window positions
-- Adds love.filesystem.setSymbolicLinksEnabled, love.filesystem.getSymbolicLinksEnabled, and love.filesystem.isSymbolicLink for symbolic link manipulation.
+Run `require("love-polyfill")` after LÖVE has been loaded.
+
+## Current Additions
+See the LÖVE wiki for details on these methods.
+- love.window.setPosition, love.window.getPosition
+- love.window.maximize, love.window.minimize
+- love.window.showMessageBox
+- love.filesystem.setSymlinksEnabled, love.filesystem.areSymlinksEnabled, love.filesystem.isSymlink
