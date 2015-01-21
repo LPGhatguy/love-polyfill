@@ -1,4 +1,4 @@
---love-polyfill version 1.1.2
+--love-polyfill version 1.1.3
 --Implements 0.9.2 features into 0.9.1
 --Lucien Greathouse (LPGhatguy)
 
@@ -85,8 +85,8 @@ ffi.cdef([[
 	int PHYSFS_isSymbolicLink(const char *fname);
 ]])
 
-local liblove = ffi.load("love")
-local sdl = ffi.load("SDL2")
+local liblove = (ffi.os == "Windows") and ffi.load("love") or ffi.C
+local sdl = (ffi.os == "Windows") and ffi.load("SDL2") or ffi.C
 
 if (not love) then
 	error("love-polyfill requires love to be loaded and in the global namespace")
@@ -97,8 +97,8 @@ if (love.polyfill) then
 end
 
 love.polyfill = {
-	version = {1, 1, 2},
-	versionCode = 4,
+	version = {1, 1, 3},
+	versionCode = 5,
 	emulating = "0.9.2"
 }
 
