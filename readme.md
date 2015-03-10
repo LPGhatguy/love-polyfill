@@ -1,11 +1,11 @@
 # LÖVE Polyfill
 This is a project that provides select features from future versions of LÖVE for versions that are released now. This lets developers target existing versions while still developing for near-future versions of LÖVE.
 
+Presently, LÖVE Polyfill targets LÖVE 0.9.2, implementing fixes and features from a hypothetical 0.9.3.
+
 Run `require("love-polyfill")` after LÖVE has been loaded.
 
-## Current Additions
-See the LÖVE wiki for details on these methods.
-- love.window.setPosition, love.window.getPosition
-- love.window.maximize, love.window.minimize
-- love.window.showMessageBox
-- love.filesystem.setSymlinksEnabled, love.filesystem.areSymlinksEnabled, love.filesystem.isSymlink
+## Current Changes
+- Added love.window.maximize
+- Fixed love.keyboard.getKeyFromScancode to not crash on invalid scancodes
+- Fixed love.graphics.getColorMask to return proper state
